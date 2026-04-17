@@ -1,0 +1,355 @@
+---
+title: "Suicidios vs Homicidios en Uruguay"
+author: "Alejandro Ferrari"
+date: "2025-09-29"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r echo=FALSE, include=FALSE, message=FALSE}
+library(readxl);
+library(ggplot2);
+library(tidyr);
+library(dplyr);
+library(corrplot);
+```
+```{r echo=FALSE, include=FALSE}
+nombre_archivo <- "suicidios_homicidios.xlsx"
+nombre_hoja <- "sui_hom"
+
+datos_sh <- read_excel(
+  path = nombre_archivo,   
+  sheet = nombre_hoja)      
+```
+
+```{r echo=FALSE}
+#print(head(datos_sh))
+#print(str(datos_sh))
+```
+
+```{r echo=FALSE, include=FALSE}
+datos_tidy <- datos_sh %>%
+  pivot_longer(
+    cols = c(suicidios, homicidios), # Columnas a pivotar
+    names_to = "Tipo_Evento",        # Nueva columna para el nombre (Suicidios/Homicidios)
+    values_to = "Cantidad"           # Nueva columna para los valores
+  )
+
+#print("Estructura de los datos transformados:")
+#print(head(datos_tidy))
+```
+---
+
+## Resumen ejecutivo
+
+El año 2024 presentó una característica que llamó nuestra atención: la tasa de suicidios duplicaba a la tasa de homicidios. Dado la sensibilidad e importancia de ambas problemáticas para el Uruguay, decidimos efectuar un breve estudio buscando analizar estas dos variables en el periodo 2014-2024. Al hacerlo hemos constatado que los suicidios, año a año, siempre han superado en número a los homicidios. Así mismo en la mayoría de los años, estos superaron al doble de aquellos en número. Se intentó encontrar una relación directa entre ambos indicadores basándonos en el hecho de las similitudes en sus curvas de tendencia. Sin embargo no fue posible establecer esta relación, por lo que se concluye recomendando ampliar la investigación buscando variables externas a este estudio que puedan estar afectando a cada una o a ambas tasas tan importantes para el bienestar del Uruguay.
+
+## Suicidios en Uruguay, última década
+
+Al comenzar el periodo de estudio en el año 2014, Uruguay experimentaba una tasa de suicidios de 17.4 cada 100mil habitantes. Al cierre del periodo de estudio, la tasa era de 21.35 cada 100mil habitantes. Esto se corresponde con un incremento de 1:1.23, es decir un 122.70%. Si bien la tasa de suicidios durante los años del periodo en algunos casos subió, y en otros bajó, la tendencia siempre se ha mantenido al alza, siendo los resultados los observados finalmente.
+
+Esto, sume a Uruguay en una gran problemática relacionada con la salud mental. Diferentes miradas vinculan al suicidio con el consumo problemático de sustancias, problemas de salud mental, e incidencia de factores psicosociales derivados de la evolución de la economía Uruguaya en los últimos veinte años.
+
+```{r suicidios_uy, echo=FALSE, message=FALSE}
+grafico_suicidio <- ggplot(
+  data = datos_sh,
+  aes(
+    x = factor(año_def),
+    y = sui_tasa_100m,
+    group = 1
+  )
+) +
+  geom_text(
+    aes(label = sui_tasa_100m), # La etiqueta será el valor de la tasa
+    vjust = -1,                 # Mueve la etiqueta verticalmente (arriba del punto). Usa 1 para abajo.
+    hjust = 0.5,                # Centra la etiqueta horizontalmente
+    size = 3.5,                 # Tamaño del texto (ajustable)
+    color = "darkgreen"         # Color del texto (ajustable)
+  ) +
+    geom_line(color="blue") +
+    geom_point(color = "black") +
+      labs(
+        title = "Suicidio en Uruguay, evolución anual",
+        x = "Año",
+        y = "Tasa cada 100mil/hab"
+        #fill = "Tipo de Evento"
+      ) +
+  scale_y_continuous(expand = expansion(mult = c(0.1, 0.2))) +
+  theme_minimal() + # Un tema limpio
+  theme(plot.title = element_text(hjust = 0.5, face = "bold")) # Centrar título
+
+# Mostrar el gráfico
+print(grafico_suicidio)
+```
+
+
+## Homicidios en Uruguay, última década
+
+Al comenzar el periodo de estudio en el año 2014, Uruguay experimentaba una tasa de homicidios de 7.8 cada 100mil habitantes. Al cierre del periodo de estudio, la tasa era de 10.7 cada 100mil habitantes. Esto se corresponde con un incremento de 1:1.37, es decir un 137.18%. Si bien la tasa de homicidios durante los años del periodo en algunos casos subió, y en otros bajó, la tendencia siempre se ha mantenido al alza, siendo los resultados los observados finalmente.
+
+En el año 2018 se registró un fuerte incremento, llegando a una tasa de 12 cada 100mil habitantes. Otro momento interesante es el periodo 2020-2021, cuando se experimenta la llegada y peor momento de la pandemia de Covid 19. Posteriormente a la misma, la tasa se estaciona con una tendencia mínima a la baja.
+
+Esto, refleja un contexto de elevada violencia que Uruguay experimenta, especialmente vinculado con el tráfico de sustancias ilegales, la existencia de bandas fuertemente armadas, y múltiples ocurrencias de casos de violencia intrafamiliar y o de genero (en especial contra la mujer).
+
+
+```{r homicidios_uy, echo=FALSE, message=FALSE}
+grafico_homicidio <- ggplot(
+  data = datos_sh,
+  aes(
+    x = factor(año_def),
+    y = hom_rasa_100m,
+    group = 1
+  )
+) +
+  geom_text(
+    aes(label = hom_rasa_100m), # La etiqueta será el valor de la tasa
+    vjust = -1,                 # Mueve la etiqueta verticalmente (arriba del punto). Usa 1 para abajo.
+    hjust = 0.5,                # Centra la etiqueta horizontalmente
+    size = 3.5,                 # Tamaño del texto (ajustable)
+    color = "darkgreen"         # Color del texto (ajustable)
+  ) +
+  geom_line(color="red") +
+  geom_point(color = "black") +
+    labs(
+    title = "Homicidio en Uruguay, evolución anual",
+    x = "Año",
+    y = "Tasa cada 100mil/hab"
+    #fill = "Tipo de Evento"
+  ) +
+  scale_y_continuous(expand = expansion(mult = c(0.1, 0.2))) +
+  theme_minimal() + # Un tema limpio
+  theme(plot.title = element_text(hjust = 0.5, face = "bold")) # Centrar título
+
+# Mostrar el gráfico
+print(grafico_homicidio)
+```
+
+## Suicidios y Homicidios, comparativa anual
+
+En el año 2024 los registros oficiales revelan 764 suicidios y 382 homicidios. A simple vista, lo que casi parece una relación de 2:1. A partir de esta singularidad, se comparan las cifras de ambas variables entre si, para los años desde 2014 a 2024.
+
+```{r comparativa_anual, echo=FALSE, message=FALSE}
+datos_con_comparacion <- datos_sh %>%
+  mutate(
+    # La nueva columna 'suicidio_mayor' será TRUE si la tasa de suicidios es mayor, y FALSE si no lo es.
+    suicidio_mayor = sui_tasa_100m > hom_rasa_100m,
+    suicidio_mayor_por = sui_tasa_100m / hom_rasa_100m
+  )
+
+# Imprimir el resultado para ver la columna booleana año por año
+#print("Comparación de Tasas Año a Año:")
+#print(datos_con_comparacion)
+
+#resultado_final <- all(datos_con_comparacion$suicidio_mayor)
+
+#print("-------------------------------------------------------")
+#print(paste("¿La tasa de suicidio es mayor que la de homicidio en TODOS los años?"))
+#print(resultado_final)
+
+# Crear el gráfico de la Razón de Tasas a lo largo del tiempo
+grafico_razon <- ggplot(
+  data = datos_con_comparacion,
+  aes(
+    x = año_def,                   # Eje X: El año
+    y = suicidio_mayor_por     # Eje Y: La razón (Ratio Suicidios/Homicidios)
+  )
+) +
+  # 1. Línea de referencia crucial en Y=1
+  geom_hline(
+    yintercept = 1,
+    linetype = "dashed",       # Línea punteada para diferenciarla de los datos
+    color = "black",
+    #size = 1
+  ) +
+  
+  geom_hline(
+    yintercept = 2,
+    linetype = "dashed",       # Línea punteada para diferenciarla de los datos
+    color = "red",
+    #size = 1
+  ) +
+  
+  # 2. Capa de puntos (Mejor que barras para una razón, ya que enfatiza el valor exacto)
+  geom_point(
+    #size = 4, 
+    color = "darkblue"
+  ) +
+  
+  # 3. Línea de conexión para ver la tendencia de la razón
+  geom_line(
+    group = 1,                 # Asegurar que se conecten los puntos
+    color = "darkblue",
+    #size = 1
+  ) +
+  
+  # 4. Etiquetas y personalización
+  labs(
+    title = "Razón Tasa de Suicidios / Tasa de Homicidios por Año",
+    x = "Año",
+    y = "Razón (Ratio Suicidios/Homicidios)",
+    subtitle = "Razón > 1 indica tasa de suicidio es mayor | Razón = 2 indica tasa de suicidio duplica"
+  ) +
+  scale_x_continuous(breaks = unique(datos_con_comparacion$año_def)) +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"))
+
+# Mostrar el gráfico
+print(grafico_razon)
+```
+
+Como el gráfico muestra, los valores de ratio por encima de 1 indican un valor mayor de casos de suicidio en relación con los de homicidio. Así también, un valor de 2 indica que el número de casos de suicidio es el doble que el de homicidios. Por encima de 2, supera el doble.
+
+Se concluye que, desde hace diez años, en Uruguay el número de suicidios por año, supera al de homicidios, 7 años superando el doble de casos, dos años por encima de una vez y media el número de homicidios, y 2 años lindando con el doble del número de homicidios. 
+
+A continuación una visualización de ambos indices comparados en el tiempo (anualmente).
+
+```{r echo=FALSE}
+grafico_barras <- ggplot(
+  data = datos_tidy, 
+  aes(
+    x = factor(año_def),       # Eje X: Los años. 'factor()' asegura que se traten como categorías.
+    y = Cantidad,          # Eje Y: La cantidad de eventos.
+    fill = Tipo_Evento     # Agrupamiento: El color de la barra (fill) agrupa Suicidios y Homicidios.
+  )
+) +
+  # Añadir la capa de barras. 'position = "dodge"' es clave para agruparlas.
+  geom_bar(
+    stat = "identity",     # Usar los valores exactos de Y, no un conteo.
+    position = position_dodge(width = 0.9) # Asegura que las barras estén lado a lado
+  ) +
+  
+  # Personalización del gráfico
+  labs(
+    title = "Comparación Anual de Suicidios vs. Homicidios",
+    x = "Año",
+    y = "Número de Casos",
+    fill = "Tipo de Evento"
+  ) +
+  
+  # Ajustar colores y tema para mejor visualización
+  scale_fill_manual(values = c("homicidios" = "#E69F00", "suicidios" = "#56B4E9")) +
+  theme_minimal() + # Un tema limpio
+  theme(plot.title = element_text(hjust = 0.5, face = "bold")) # Centrar título
+
+# Mostrar el gráfico
+print(grafico_barras)
+```
+
+## Tendencia evolutiva del suicidio y el homicidio
+
+Desde el año 2014, ambos indicadores presentan una tendencia incremental, con variaciones anuales que no revierten la misma de forma definitiva. Hasta el año 2019-2020 la tendencia de ambos indicadores evolucionaba de forma casi paralela, lo que dejó de ser así a partir del inicio de la pandemia de Covid 19. En este punto los homicidios han presentado un estacionamiento de su impulso incremental, ya manteniendo dicho comportamiento durante tres años.
+
+
+```{r echo=FALSE, message=FALSE}
+grafico_tendencia <- ggplot(
+  data = datos_tidy, 
+  aes(
+    x = año_def,
+    y = Cantidad,
+    color = Tipo_Evento,
+    group = Tipo_Evento
+  )
+) +
+  # 1. Añadir las líneas y puntos originales
+  geom_line(alpha = 0.8) +
+  geom_point(color = "black") +
+  
+  # 2. 🔑 Añadir la línea de tendencia (regresión lineal) 
+  # Esto dibuja una línea para cada valor de 'Tipo_Evento' (por el mapeo de color y grupo)
+  geom_smooth(
+    method = "lm",           # Especifica el método: 'lm' es Regresión Lineal.
+    formula = y ~ x,
+    se = TRUE, #FALSE,              # IMPORTANTE: 'se = FALSE' oculta la banda de error estándar,
+                             # dejando solo la línea de tendencia.
+    linetype = "dashed",     # Usamos línea punteada para distinguirla de la línea de datos.
+    #size = 1                 # Grosor de la línea
+  ) +
+  
+  # Personalización del gráfico
+  labs(
+    title = "Tendencia Anual de Suicidios y Homicidios (con Regresión Lineal)",
+    x = "Año",
+    y = "Número de Casos",
+    color = "Tipo de Evento"
+  ) +
+  
+  # Ajustes de visualización
+  scale_color_manual(values = c("homicidios" = "red", "suicidios" = "blue")) +
+  scale_x_continuous(breaks = unique(datos_tidy$año_def)) +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"))
+
+# Mostrar el gráfico
+print(grafico_tendencia)
+```
+
+## Correlación entre suicidio y homicidio
+
+En vista de que con el correr de los años el suicidio y el homicidio, en su indicador de ocurrencia de casos, se han incrementado manteniendo una tendencia similar, hemos decidido realizar un estudio de correlación con el método Pearson.
+
+El resultado indica entre suicidios y homicidios una correlación positiva de 0.59 lo que nos hace pensar que, si bien esto demostraría el hecho de que ambas incrementan juntas en el tiempo, no lo estarían haciendo por interacción directa, sino por acción de otra variable ajena a este estudio, lo que nos invita a sugerir el trabajar en ampliar la tarea en su búsqueda.
+
+El homicidio, en relación con el año de defunción, devolvió un indice de correlación positivo de 0.66, esto muestra que existe el incremento relacionado con el pasar del tiempo, aunque dicho crecimiento hoy es menor.
+
+El suicidio, en relación con el año de defunción, devolvió un indice de correlación positivo de 0.87, lo que muestra que existe una relación mucho más directa entre el transcurso del tiempo y el incremento del número de casos, lo que confirmaría lo que veíamos respecto a que su curva de tendencia se distanciaba al alza en relación con la de homicidios.
+
+
+```{r echo=FALSE}
+datos_cor <- datos_sh %>%
+
+select (año_def, suicidios, homicidios)
+
+# 2. Calcular la matriz de correlación de Pearson
+# La función 'cor()' realiza el cálculo.
+matriz_correlacion <- cor(datos_cor, method = "pearson")
+
+
+```
+### Matriz de Correlación de Pearson
+
+```{r echo=FALSE}
+corrplot(
+  corr = matriz_correlacion,        # La matriz que calculamos
+  method = "circle",                # Estilo de representación (círculos, cuadrados, etc.)
+  type = "upper",                   # Mostrar solo la parte superior (la matriz es simétrica)
+  tl.col = "black",                 # Color del texto de las etiquetas
+  tl.srt = 45,                      # Rotar etiquetas para mejor lectura
+  col = COL2("PiYG", 200),          # Paleta de colores (Rojo/Azul)
+  addCoef.col = "white",            # Añadir los coeficientes numéricos en la gráfica
+  order = "hclust"                  # Opcional: Reordenar las variables por similitud (clustering)
+)
+
+# Imprimir la matriz de correlación para ver los valores
+#print("Matriz de Correlación de Pearson:")
+print(matriz_correlacion)
+```
+
+## Conclusiones y recomendaciones
+
+### Conclusiones
+
+   1 - La tasa de suicidios y homicidios tienden a incrementarse en Uruguay.
+   
+   2 - Los suicidios en el periodo se incrementaron un 122.70%.
+   
+   3 - Los homicidios en el periodo se incrementaron un 137.18%.
+   
+   4 - En cada año del periodo, la tasa de suicidios fue superior a la de homicidios.
+   
+   5 - La mayoría de esos años, la tasa de suicidios ha superado al doble de la homicidios.
+   
+   6 - En 2024 la razón entre el número de suicidios y el de homicidios fue 1.9953. Podemos decir, el doble.
+   
+   7 - El homicidio es socialmente visible y libre de tabúes, sin embargo la urgencia social entre estas dos variables se enfoca en el suicidio.
+   
+   8 - El crecimiento de ambos indicadores no esta directamente relacionado.
+   
+### Recomendaciones
+
+   1 - El suicidio como problema social de origen multifactorial requiere se mantenga la atención sobre el mismo.
+   
+   2 - Si bien se concluyó que tanto el suicidio como el homicidio durante los primeros 7-8 años del periodo mantuvieron una tendencia similar no se pudo establecer una dependencia entre ambos, por lo que se recomienda continuar la línea investigativa buscando terceros factores que puedan estar incidiendo en el comportamiento de cada una o ambos indicadores.
+   
+---
